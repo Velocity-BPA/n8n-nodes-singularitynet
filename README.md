@@ -8,25 +8,25 @@
 >
 > For licensing information, visit https://velobpa.com/licensing or contact licensing@velobpa.com.
 
-This n8n community node provides comprehensive integration with SingularityNET's decentralized AI marketplace, featuring 5 core resources (AIServices, Organizations, Channels, Transactions, Marketplace) with full CRUD operations and marketplace interactions for seamless AI service discovery, execution, and payment management.
+An n8n community node for SingularityNET integration, providing access to 5 core resources for decentralized AI service management. Access AI services, manage organizations and payment channels, track blockchain transactions, and interact with the service registry through n8n workflows.
 
 ![n8n Community Node](https://img.shields.io/badge/n8n-Community%20Node-blue)
 ![License](https://img.shields.io/badge/license-BSL--1.1-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
-![SingularityNET](https://img.shields.io/badge/SingularityNET-AI%20Marketplace-purple)
-![Blockchain](https://img.shields.io/badge/Blockchain-Ethereum-green)
-![AGI Token](https://img.shields.io/badge/Token-AGI-orange)
+![Blockchain](https://img.shields.io/badge/Blockchain-Ethereum-blue)
+![AI Services](https://img.shields.io/badge/AI-Services-green)
+![Decentralized](https://img.shields.io/badge/Network-Decentralized-purple)
 
 ## Features
 
-- **AI Service Discovery** - Search, filter, and discover AI services across the SingularityNET marketplace
-- **Service Execution** - Execute AI services directly from n8n workflows with automatic payment handling
-- **Organization Management** - Create, update, and manage AI service provider organizations
-- **Channel Operations** - Handle payment channels for efficient micropayments to AI services
-- **Transaction Monitoring** - Track and manage blockchain transactions for service payments
-- **Marketplace Integration** - Browse marketplace categories, ratings, and service metadata
-- **Automated Token Management** - Handle AGI token transactions and balance monitoring
-- **Multi-Network Support** - Compatible with Ethereum mainnet and testnets
+- **AI Service Integration** - Call and manage decentralized AI services on the SingularityNET platform
+- **Organization Management** - Create, update, and manage AI service organizations
+- **Payment Channel Operations** - Handle micropayments and channel management for service usage
+- **Transaction Tracking** - Monitor blockchain transactions and payment flows
+- **Registry Access** - Search and discover available AI services in the network
+- **Blockchain Integration** - Native support for Ethereum-based operations
+- **Decentralized Architecture** - Connect to the distributed AI marketplace
+- **Real-time Monitoring** - Track service performance and usage metrics
 
 ## Installation
 
@@ -61,118 +61,105 @@ n8n start
 
 | Field | Description | Required |
 |-------|-------------|----------|
-| API Key | SingularityNET platform API key for service discovery and metadata | Yes |
-| Wallet Private Key | Ethereum wallet private key for transaction signing | Yes |
-| Network | Blockchain network (mainnet, ropsten, kovan) | Yes |
-| Registry Address | SingularityNET registry contract address | No |
+| API Key | Your SingularityNET platform API key | Yes |
+| Network | Ethereum network (mainnet/testnet) | Yes |
+| Wallet Address | Your wallet address for transactions | Yes |
 
 ## Resources & Operations
 
-### 1. AI Services
+### 1. AIService
 
 | Operation | Description |
 |-----------|-------------|
-| List Services | Retrieve all available AI services from the marketplace |
-| Get Service | Get detailed information about a specific AI service |
-| Execute Service | Call an AI service with input parameters and handle payment |
-| Search Services | Search for AI services by keywords, tags, or categories |
-| Get Service Metadata | Retrieve service metadata including pricing and endpoints |
+| Get | Retrieve AI service details and metadata |
+| Call | Execute an AI service with input parameters |
+| List | Get available AI services from organizations |
+| Get Pricing | Retrieve service pricing and payment information |
+| Get Metadata | Fetch service metadata and configuration |
 
-### 2. Organizations
-
-| Operation | Description |
-|-----------|-------------|
-| List Organizations | Get all organizations providing AI services |
-| Get Organization | Retrieve detailed organization information |
-| Create Organization | Register a new AI service provider organization |
-| Update Organization | Modify organization details and metadata |
-| Delete Organization | Remove an organization from the registry |
-| Get Organization Services | List all services provided by an organization |
-
-### 3. Channels
+### 2. Organization
 
 | Operation | Description |
 |-----------|-------------|
-| List Channels | Get all payment channels for the authenticated user |
-| Create Channel | Open a new payment channel with an organization |
-| Get Channel | Retrieve details of a specific payment channel |
-| Fund Channel | Add AGI tokens to an existing payment channel |
-| Close Channel | Close a payment channel and settle remaining balance |
-| Get Channel Balance | Check available balance in a payment channel |
+| Create | Create a new AI service organization |
+| Get | Retrieve organization details and information |
+| Update | Modify organization settings and metadata |
+| List | Get all organizations in the network |
+| Delete | Remove an organization from the platform |
+| Get Members | Retrieve organization member list |
 
-### 4. Transactions
-
-| Operation | Description |
-|-----------|-------------|
-| List Transactions | Get transaction history for the authenticated wallet |
-| Get Transaction | Retrieve details of a specific blockchain transaction |
-| Monitor Transaction | Track transaction status and confirmations |
-| Get Transaction Receipt | Get transaction receipt and execution details |
-| Estimate Gas | Estimate gas costs for pending transactions |
-
-### 5. Marketplace
+### 3. Channel
 
 | Operation | Description |
 |-----------|-------------|
-| Browse Categories | List all available AI service categories |
-| Get Featured Services | Retrieve featured and trending AI services |
-| Get Service Rankings | Get services ranked by popularity and ratings |
-| Search Marketplace | Advanced marketplace search with filters |
-| Get Service Reviews | Retrieve user reviews and ratings for services |
-| Submit Review | Submit a review and rating for a used service |
+| Open | Open a new payment channel for services |
+| Close | Close an existing payment channel |
+| Extend | Extend payment channel expiration |
+| Get Balance | Check current channel balance |
+| Fund | Add funds to an existing channel |
+| List | Get all channels for an organization |
+
+### 4. Transaction
+
+| Operation | Description |
+|-----------|-------------|
+| Get | Retrieve transaction details by hash |
+| List | Get transaction history for an account |
+| Create | Create a new blockchain transaction |
+| Get Status | Check transaction confirmation status |
+| Get Receipt | Retrieve transaction receipt and logs |
+
+### 5. Registry
+
+| Operation | Description |
+|-----------|-------------|
+| Search Services | Search for AI services by criteria |
+| Get Service | Retrieve specific service from registry |
+| List Organizations | Get all registered organizations |
+| Get Tags | Retrieve available service tags |
+| Filter by Category | Find services by category or type |
 
 ## Usage Examples
 
 ```javascript
-// Execute an AI image processing service
+// Call an AI service for image classification
 {
-  "resource": "aiServices",
-  "operation": "executeService",
-  "serviceId": "snet-image-enhancement-v2",
-  "organizationId": "snet-ai-vision",
-  "parameters": {
+  "service_id": "image-classifier-v2",
+  "organization_id": "example-ai-org",
+  "method": "classify",
+  "input": {
     "image_url": "https://example.com/image.jpg",
-    "enhancement_type": "super_resolution",
-    "scale_factor": 2
-  },
-  "maxPrice": "100000000" // 0.1 AGI in cogs
-}
-```
-
-```javascript
-// Search for natural language processing services
-{
-  "resource": "aiServices",
-  "operation": "searchServices",
-  "query": "sentiment analysis",
-  "category": "nlp",
-  "filters": {
-    "priceRange": { "min": 0, "max": 50000000 },
-    "minRating": 4.0,
-    "tags": ["sentiment", "text-analysis"]
+    "max_results": 5
   }
 }
 ```
 
 ```javascript
-// Create a payment channel with an AI service provider
+// Open a payment channel for service usage
 {
-  "resource": "channels",
-  "operation": "createChannel",
-  "organizationId": "snet-nlp-services",
-  "amount": "1000000000", // 1 AGI in cogs
+  "organization_id": "example-ai-org",
+  "service_group_id": "default-group",
+  "amount": "1000000000", // Amount in AGI tokens (wei)
   "expiration": "2024-12-31T23:59:59Z"
 }
 ```
 
 ```javascript
-// Monitor marketplace for trending AI services
+// Search for AI services in the registry
 {
-  "resource": "marketplace",
-  "operation": "getFeaturedServices",
-  "category": "computer-vision",
-  "limit": 10,
-  "sortBy": "popularity"
+  "query": "natural language processing",
+  "tags": ["nlp", "text-analysis"],
+  "category": "language",
+  "max_results": 10
+}
+```
+
+```javascript
+// Get organization details and services
+{
+  "organization_id": "example-ai-org",
+  "include_services": true,
+  "include_members": true
 }
 ```
 
@@ -180,12 +167,12 @@ n8n start
 
 | Error | Description | Solution |
 |-------|-------------|----------|
-| Invalid API Key | Authentication failed with provided API key | Verify API key is correct and active |
-| Insufficient Balance | Not enough AGI tokens for service execution | Fund wallet or payment channel with AGI tokens |
-| Service Unavailable | AI service is temporarily offline or unreachable | Try again later or contact service provider |
-| Transaction Failed | Blockchain transaction was rejected or failed | Check gas settings and wallet balance (ETH) |
-| Channel Expired | Payment channel has exceeded expiration time | Create a new payment channel with the organization |
-| Network Error | Connection to SingularityNET network failed | Check network connectivity and blockchain node status |
+| Invalid API Key | Authentication failed with provided credentials | Verify API key is correct and active |
+| Insufficient Funds | Not enough AGI tokens for service call | Add funds to wallet or payment channel |
+| Service Unavailable | AI service is temporarily offline | Retry later or use alternative service |
+| Channel Expired | Payment channel has expired | Open new channel or extend existing one |
+| Network Error | Blockchain network connection issues | Check network status and retry |
+| Invalid Parameters | Service call parameters are malformed | Review service documentation and fix parameters |
 
 ## Development
 
@@ -230,5 +217,5 @@ Contributions are welcome! Please ensure:
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/Velocity-BPA/n8n-nodes-singularitynet/issues)
-- **SingularityNET Developer Portal**: [dev.singularitynet.io](https://dev.singularitynet.io)
-- **SingularityNET Community**: [community.singularitynet.io](https://community.singularitynet.io)
+- **SingularityNET Documentation**: [dev.singularitynet.io](https://dev.singularitynet.io)
+- **Platform Portal**: [beta.singularitynet.io](https://beta.singularitynet.io)
