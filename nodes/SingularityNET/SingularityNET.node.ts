@@ -67,6 +67,10 @@ export class SingularityNET implements INodeType {
           {
             name: 'Marketplace',
             value: 'marketplace',
+          },
+          {
+            name: 'Registry',
+            value: 'registry',
           }
         ],
         default: 'aIServices',
@@ -291,6 +295,21 @@ export class SingularityNET implements INodeType {
     },
   ],
   default: 'getFeaturedServices',
+},
+{
+  displayName: 'Operation',
+  name: 'operation',
+  type: 'options',
+  noDataExpression: true,
+  displayOptions: { show: { resource: ['registry'] } },
+  options: [
+    { name: 'Get Services', value: 'getServices', description: 'Get services from registry', action: 'Get services from registry' },
+    { name: 'Get Organizations', value: 'getOrganizations', description: 'Get organizations from registry', action: 'Get organizations from registry' },
+    { name: 'Register Service', value: 'registerService', description: 'Register new service', action: 'Register a new service' },
+    { name: 'Update Service', value: 'updateService', description: 'Update service registration', action: 'Update service registration' },
+    { name: 'Unregister Service', value: 'unregisterService', description: 'Unregister service', action: 'Unregister a service' }
+  ],
+  default: 'getServices',
 },
       // Parameter definitions
 {
@@ -976,6 +995,113 @@ export class SingularityNET implements INodeType {
   default: '30d',
   description: 'Time period for statistics',
 },
+{
+  displayName: 'Tag',
+  name: 'tag',
+  type: 'string',
+  default: '',
+  description: 'Filter services by tag',
+  displayOptions: {
+    show: {
+      resource: ['registry'],
+      operation: ['getServices']
+    }
+  }
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  default: '',
+  description: 'Filter services by address',
+  displayOptions: {
+    show: {
+      resource: ['registry'],
+      operation: ['getServices']
+    }
+  }
+},
+{
+  displayName: 'Metadata',
+  name: 'metadata',
+  type: 'string',
+  default: '',
+  description: 'Filter services by metadata',
+  displayOptions: {
+    show: {
+      resource: ['registry'],
+      operation: ['getServices']
+    }
+  }
+},
+{
+  displayName: 'Organization Name',
+  name: 'name',
+  type: 'string',
+  default: '',
+  description: 'Filter organizations by name',
+  displayOptions: {
+    show: {
+      resource: ['registry'],
+      operation: ['getOrganizations']
+    }
+  }
+},
+{
+  displayName: 'Owner',
+  name: 'owner',
+  type: 'string',
+  default: '',
+  description: 'Filter organizations by owner',
+  displayOptions: {
+    show: {
+      resource: ['registry'],
+      operation: ['getOrganizations']
+    }
+  }
+},
+{
+  displayName: 'Organization ID',
+  name: 'orgId',
+  type: 'string',
+  required: true,
+  default: '',
+  description: 'The organization ID for service registration',
+  displayOptions: {
+    show: {
+      resource: ['registry'],
+      operation: ['registerService']
+    }
+  }
+},
+{
+  displayName: 'Service ID',
+  name: 'serviceId',
+  type: 'string',
+  required: true,
+  default: '',
+  description: 'The service ID to register, update, or unregister',
+  displayOptions: {
+    show: {
+      resource: ['registry'],
+      operation: ['registerService', 'updateService', 'unregisterService']
+    }
+  }
+},
+{
+  displayName: 'Metadata URI',
+  name: 'metadataURI',
+  type: 'string',
+  required: true,
+  default: '',
+  description: 'The metadata URI for the service',
+  displayOptions: {
+    show: {
+      resource: ['registry'],
+      operation: ['registerService', 'updateService']
+    }
+  }
+},
     ],
   };
 
@@ -994,6 +1120,8 @@ export class SingularityNET implements INodeType {
         return [await executeTransactionsOperations.call(this, items)];
       case 'marketplace':
         return [await executeMarketplaceOperations.call(this, items)];
+      case 'registry':
+        return [await executeRegistryOperations.call(this, items)];
       default:
         throw new NodeOperationError(this.getNode(), `The resource "${resource}" is not supported`);
     }
@@ -1804,6 +1932,154 @@ async function executeMarketplaceOperations(
           message: `SingularityNET Marketplace API error: ${errorMessage}`,
           httpCode: statusCode.toString(),
         });
+      }
+    }
+  }
+
+  return returnData;
+}
+
+async function executeRegistryOperations(
+  this: IExecuteFunctions,
+  items: INodeExecutionData[],
+): Promise<INodeExecutionData[]> {
+  const returnData: INodeExecutionData[] = [];
+  const operation = this.getNodeParameter('operation', 0) as string;
+  const credentials = await this.getCredentials('singularitynetApi') as any;
+
+  for (let i = 0; i < items.length; i++) {
+    try {
+      let result: any;
+
+      switch (operation) {
+        case 'getServices': {
+          const tag = this.getNodeParameter('tag', i) as string;
+          const address = this.getNodeParameter('address', i) as string;
+          const metadata = this.getNodeParameter('metadata', i) as string;
+
+          const params = new URLSearchParams();
+          if (tag) params.append('tag', tag);
+          if (address) params.append('address', address);
+          if (metadata) params.append('metadata', metadata);
+
+          const queryString = params.toString();
+          const url = `${credentials.baseUrl}/registry/services${queryString ? '?' + queryString : ''}`;
+
+          const options: any = {
+            method: 'GET',
+            url,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getOrganizations': {
+          const name = this.getNodeParameter('name', i) as string;
+          const owner = this.getNodeParameter('owner', i) as string;
+
+          const params = new URLSearchParams();
+          if (name) params.append('name', name);
+          if (owner) params.append('owner', owner);
+
+          const queryString = params.toString();
+          const url = `${credentials.baseUrl}/registry/organizations${queryString ? '?' + queryString : ''}`;
+
+          const options: any = {
+            method: 'GET',
+            url,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'registerService': {
+          const orgId = this.getNodeParameter('orgId', i) as string;
+          const serviceId = this.getNodeParameter('serviceId', i) as string;
+          const metadataURI = this.getNodeParameter('metadataURI', i) as string;
+
+          const body = {
+            orgId,
+            serviceId,
+            metadataURI,
+          };
+
+          const options: any = {
+            method: 'POST',
+            url: `${credentials.baseUrl}/registry/services`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body,
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'updateService': {
+          const serviceId = this.getNodeParameter('serviceId', i) as string;
+          const metadataURI = this.getNodeParameter('metadataURI', i) as string;
+
+          const body = {
+            metadataURI,
+          };
+
+          const options: any = {
+            method: 'PUT',
+            url: `${credentials.baseUrl}/registry/services/${serviceId}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body,
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'unregisterService': {
+          const serviceId = this.getNodeParameter('serviceId', i) as string;
+
+          const options: any = {
+            method: 'DELETE',
+            url: `${credentials.baseUrl}/registry/services/${serviceId}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        default:
+          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
+      }
+
+      returnData.push({ json: result, pairedItem: { item: i } });
+    } catch (error: any) {
+      if (this.continueOnFail()) {
+        returnData.push({ json: { error: error.message }, pairedItem: { item: i } });
+      } else {
+        throw error;
       }
     }
   }
