@@ -5,22 +5,29 @@
     "lib": ["es2019"],
     "outDir": "./dist",
     "rootDir": "./",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
+    "removeComments": true,
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "moduleResolution": "node"
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "nodes/**/*",
-    "credentials/**/*"
+    "credentials/**/*",
+    "nodes/**/*"
   ],
   "exclude": [
-    "node_modules",
-    "dist"
+    "node_modules/**/*",
+    "dist/**/*"
   ]
 }
