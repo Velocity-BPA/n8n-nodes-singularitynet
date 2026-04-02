@@ -67,1215 +67,830 @@ describe('SingularityNET Node', () => {
   });
 
   // Resource-specific tests
-describe('AIServices Resource', () => {
+describe('AIService Resource', () => {
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-key',
+				baseUrl: 'https://api.singularitynet.io/v1',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn(),
+			},
+		};
+	});
+
+	describe('getAll operation', () => {
+		it('should successfully get all AI services', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getAll')
+				.mockReturnValueOnce('computer-vision')
+				.mockReturnValueOnce('snet')
+				.mockReturnValueOnce(4.5);
+
+			const mockResponse = {
+				services: [
+					{ id: 'service1', name: 'Face Detection', category: 'computer-vision' },
+					{ id: 'service2', name: 'Object Recognition', category: 'computer-vision' },
+				],
+			};
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeAIServiceOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([
+				{
+					json: mockResponse,
+					pairedItem: { item: 0 },
+				},
+			]);
+		});
+
+		it('should handle getAll operation error', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getAll')
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce(0);
+
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+
+			await expect(
+				executeAIServiceOperations.call(mockExecuteFunctions, [{ json: {} }])
+			).rejects.toThrow('API Error');
+		});
+	});
+
+	describe('get operation', () => {
+		it('should successfully get AI service details', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('get')
+				.mockReturnValueOnce('face-detect-service');
+
+			const mockResponse = {
+				id: 'face-detect-service',
+				name: 'Face Detection Service',
+				description: 'Detects faces in images',
+				category: 'computer-vision',
+			};
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeAIServiceOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([
+				{
+					json: mockResponse,
+					pairedItem: { item: 0 },
+				},
+			]);
+		});
+	});
+
+	describe('invoke operation', () => {
+		it('should successfully invoke AI service', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('invoke')
+				.mockReturnValueOnce('face-detect-service')
+				.mockReturnValueOnce({ image_url: 'https://example.com/image.jpg' })
+				.mockReturnValueOnce({ confidence_threshold: 0.8 });
+
+			const mockResponse = {
+				result: {
+					faces: [
+						{ x: 100, y: 150, width: 80, height: 100, confidence: 0.95 },
+					],
+				},
+			};
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeAIServiceOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([
+				{
+					json: mockResponse,
+					pairedItem: { item: 0 },
+				},
+			]);
+		});
+	});
+
+	describe('getCategories operation', () => {
+		it('should successfully get service categories', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getCategories');
+
+			const mockResponse = {
+				categories: ['computer-vision', 'natural-language-processing', 'audio-processing'],
+			};
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeAIServiceOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([
+				{
+					json: mockResponse,
+					pairedItem: { item: 0 },
+				},
+			]);
+		});
+	});
+
+	describe('getProviders operation', () => {
+		it('should successfully get service providers', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getProviders');
+
+			const mockResponse = {
+				providers: [
+					{ id: 'snet', name: 'SingularityNET Foundation' },
+					{ id: 'partner1', name: 'AI Partner Corp' },
+				],
+			};
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeAIServiceOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([
+				{
+					json: mockResponse,
+					pairedItem: { item: 0 },
+				},
+			]);
+		});
+	});
+});
+
+describe('Organization Resource', () => {
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-api-key',
+				baseUrl: 'https://api.singularitynet.io/v1',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn(),
+			},
+		};
+	});
+
+	it('should get all organizations successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('getAll')
+			.mockReturnValueOnce('')
+			.mockReturnValueOnce('')
+			.mockReturnValueOnce('');
+		
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue([
+			{ id: 'org1', name: 'Test Org 1' },
+			{ id: 'org2', name: 'Test Org 2' },
+		]);
+
+		const result = await executeOrganizationOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual([
+			{ id: 'org1', name: 'Test Org 1' },
+			{ id: 'org2', name: 'Test Org 2' },
+		]);
+	});
+
+	it('should get organization by ID successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('get')
+			.mockReturnValueOnce('org-123');
+		
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+			id: 'org-123',
+			name: 'Test Organization',
+		});
+
+		const result = await executeOrganizationOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual({
+			id: 'org-123',
+			name: 'Test Organization',
+		});
+	});
+
+	it('should create organization successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('create')
+			.mockReturnValueOnce('New Organization')
+			.mockReturnValueOnce('A test organization')
+			.mockReturnValueOnce('company');
+		
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+			id: 'org-new',
+			name: 'New Organization',
+			description: 'A test organization',
+			type: 'company',
+		});
+
+		const result = await executeOrganizationOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json.name).toBe('New Organization');
+	});
+
+	it('should update organization successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('update')
+			.mockReturnValueOnce('org-123')
+			.mockReturnValueOnce('Updated Organization')
+			.mockReturnValueOnce('Updated description');
+		
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+			id: 'org-123',
+			name: 'Updated Organization',
+			description: 'Updated description',
+		});
+
+		const result = await executeOrganizationOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json.name).toBe('Updated Organization');
+	});
+
+	it('should delete organization successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('delete')
+			.mockReturnValueOnce('org-123');
+		
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+			success: true,
+			message: 'Organization deleted successfully',
+		});
+
+		const result = await executeOrganizationOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json.success).toBe(true);
+	});
+
+	it('should handle errors when continueOnFail is true', async () => {
+		mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('get').mockReturnValueOnce('invalid-id');
+		mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+		mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Organization not found'));
+
+		const result = await executeOrganizationOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json.error).toBe('Organization not found');
+	});
+
+	it('should throw error when continueOnFail is false', async () => {
+		mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('get').mockReturnValueOnce('invalid-id');
+		mockExecuteFunctions.continueOnFail.mockReturnValue(false);
+		mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Organization not found'));
+
+		await expect(
+			executeOrganizationOperations.call(mockExecuteFunctions, [{ json: {} }]),
+		).rejects.toThrow('Organization not found');
+	});
+});
+
+describe('Channel Resource', () => {
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-key',
+				baseUrl: 'https://api.singularitynet.io/v1',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn(),
+			},
+		};
+	});
+
+	test('should get all channels successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('getAll')
+			.mockReturnValueOnce('open')
+			.mockReturnValueOnce('service-123')
+			.mockReturnValueOnce('client-456');
+		
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue([
+			{ id: 'channel-1', status: 'open', amount: 100 },
+			{ id: 'channel-2', status: 'open', amount: 200 },
+		]);
+
+		const result = await executeChannelOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual([
+			{ id: 'channel-1', status: 'open', amount: 100 },
+			{ id: 'channel-2', status: 'open', amount: 200 },
+		]);
+	});
+
+	test('should get a channel successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('get')
+			.mockReturnValueOnce('channel-123');
+		
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+			id: 'channel-123',
+			status: 'open',
+			amount: 500,
+		});
+
+		const result = await executeChannelOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual({
+			id: 'channel-123',
+			status: 'open',
+			amount: 500,
+		});
+	});
+
+	test('should create a channel successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('create')
+			.mockReturnValueOnce('service-123')
+			.mockReturnValueOnce(1000)
+			.mockReturnValueOnce('2024-12-31T23:59:59Z');
+		
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+			id: 'channel-new',
+			serviceId: 'service-123',
+			amount: 1000,
+			status: 'pending',
+		});
+
+		const result = await executeChannelOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual({
+			id: 'channel-new',
+			serviceId: 'service-123',
+			amount: 1000,
+			status: 'pending',
+		});
+	});
+
+	test('should update a channel successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('update')
+			.mockReturnValueOnce('channel-123')
+			.mockReturnValueOnce(1500)
+			.mockReturnValueOnce('0x123abc...');
+		
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+			id: 'channel-123',
+			amount: 1500,
+			status: 'open',
+		});
+
+		const result = await executeChannelOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual({
+			id: 'channel-123',
+			amount: 1500,
+			status: 'open',
+		});
+	});
+
+	test('should close a channel successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('close')
+			.mockReturnValueOnce('channel-123');
+		
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+			id: 'channel-123',
+			status: 'closed',
+		});
+
+		const result = await executeChannelOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual({
+			id: 'channel-123',
+			status: 'closed',
+		});
+	});
+
+	test('should handle API errors with continueOnFail', async () => {
+		mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('get');
+		mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+		mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Channel not found'));
+
+		const result = await executeChannelOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual({ error: 'Channel not found' });
+	});
+
+	test('should throw error for unknown operation', async () => {
+		mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('unknownOperation');
+
+		await expect(
+			executeChannelOperations.call(mockExecuteFunctions, [{ json: {} }])
+		).rejects.toThrow('Unknown operation: unknownOperation');
+	});
+});
+
+describe('Transaction Resource', () => {
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-key',
+				baseUrl: 'https://api.singularitynet.io/v1',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn(),
+			},
+		};
+	});
+
+	describe('getAll operation', () => {
+		it('should get all transactions successfully', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getAll')
+				.mockReturnValueOnce('pending')
+				.mockReturnValueOnce('payment')
+				.mockReturnValueOnce('2023-01-01')
+				.mockReturnValueOnce('2023-12-31');
+
+			const mockResponse = {
+				transactions: [
+					{ id: '1', hash: 'tx1', status: 'pending', type: 'payment' },
+					{ id: '2', hash: 'tx2', status: 'confirmed', type: 'service_call' },
+				],
+			};
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeTransactionOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }],
+			);
+
+			expect(result).toEqual([
+				{
+					json: mockResponse,
+					pairedItem: { item: 0 },
+				},
+			]);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://api.singularitynet.io/v1/transactions?status=pending&type=payment&date_from=2023-01-01&date_to=2023-12-31',
+				headers: {
+					'Authorization': 'Bearer test-key',
+					'Content-Type': 'application/json',
+				},
+				json: true,
+			});
+		});
+
+		it('should handle getAll operation error', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValue('getAll');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+			const result = await executeTransactionOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }],
+			);
+
+			expect(result[0].json.error).toBe('API Error');
+		});
+	});
+
+	describe('get operation', () => {
+		it('should get transaction details successfully', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('get')
+				.mockReturnValueOnce('0x123abc');
+
+			const mockResponse = {
+				id: '1',
+				hash: '0x123abc',
+				status: 'confirmed',
+				amount: 100,
+			};
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeTransactionOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }],
+			);
+
+			expect(result).toEqual([
+				{
+					json: mockResponse,
+					pairedItem: { item: 0 },
+				},
+			]);
+		});
+	});
+
+	describe('create operation', () => {
+		it('should create transaction successfully', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('create')
+				.mockReturnValueOnce('0xrecipient')
+				.mockReturnValueOnce(100)
+				.mockReturnValueOnce('test data')
+				.mockReturnValueOnce(25000);
+
+			const mockResponse = {
+				hash: '0x456def',
+				status: 'pending',
+				amount: 100,
+			};
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeTransactionOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }],
+			);
+
+			expect(result).toEqual([
+				{
+					json: mockResponse,
+					pairedItem: { item: 0 },
+				},
+			]);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'POST',
+				url: 'https://api.singularitynet.io/v1/transactions',
+				headers: {
+					'Authorization': 'Bearer test-key',
+					'Content-Type': 'application/json',
+				},
+				body: {
+					to: '0xrecipient',
+					amount: 100,
+					data: 'test data',
+					gas_limit: 25000,
+				},
+				json: true,
+			});
+		});
+	});
+
+	describe('getStatus operation', () => {
+		it('should get transaction status successfully', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getStatus')
+				.mockReturnValueOnce('0x789ghi');
+
+			const mockResponse = {
+				status: 'confirmed',
+				confirmations: 12,
+			};
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeTransactionOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }],
+			);
+
+			expect(result).toEqual([
+				{
+					json: mockResponse,
+					pairedItem: { item: 0 },
+				},
+			]);
+		});
+	});
+
+	describe('getBalance operation', () => {
+		it('should get AGIX balance successfully', async () => {
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getBalance')
+				.mockReturnValueOnce('0xwallet');
+
+			const mockResponse = {
+				address: '0xwallet',
+				balance: '1000.50',
+				token: 'AGIX',
+			};
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const result = await executeTransactionOperations.call(
+				mockExecuteFunctions,
+				[{ json: {} }],
+			);
+
+			expect(result).toEqual([
+				{
+					json: mockResponse,
+					pairedItem: { item: 0 },
+				},
+			]);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://api.singularitynet.io/v1/transactions/balance?address=0xwallet',
+				headers: {
+					'Authorization': 'Bearer test-key',
+					'Content-Type': 'application/json',
+				},
+				json: true,
+			});
+		});
+	});
+});
+
+describe('Registry Resource', () => {
   let mockExecuteFunctions: any;
 
   beforeEach(() => {
     mockExecuteFunctions = {
       getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.singularitynet.io/v1',
+      getCredentials: jest.fn().mockResolvedValue({ 
+        apiKey: 'test-key', 
+        baseUrl: 'https://api.singularitynet.io/v1' 
       }),
       getInputData: jest.fn().mockReturnValue([{ json: {} }]),
       getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
       continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
+      helpers: { httpRequest: jest.fn(), requestWithAuthentication: jest.fn() },
     };
   });
 
-  describe('getAllServices', () => {
-    it('should get all services successfully', async () => {
-      const mockResponse = {
-        services: [
-          { id: 'service1', name: 'AI Service 1', category: 'nlp' },
-          { id: 'service2', name: 'AI Service 2', category: 'vision' },
-        ],
-      };
-
+  describe('getServices operation', () => {
+    it('should get services successfully', async () => {
       mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getAllServices')
-        .mockReturnValueOnce('nlp')
-        .mockReturnValueOnce('')
-        .mockReturnValueOnce(4.0);
+        .mockReturnValueOnce('getServices')
+        .mockReturnValueOnce('ai')
+        .mockReturnValueOnce('0x123')
+        .mockReturnValueOnce('vision');
 
+      const mockResponse = { services: [{ id: 'service1', name: 'AI Service' }] };
       mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const result = await executeAIServicesOperations.call(mockExecuteFunctions, [{ json: {} }]);
+      const result = await executeRegistryOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
       expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
         method: 'GET',
-        url: 'https://api.singularitynet.io/v1/services?category=nlp&rating_min=4',
+        url: 'https://api.singularitynet.io/v1/registry/services?tag=ai&address=0x123&metadata=vision',
         headers: {
-          'Authorization': 'Bearer test-api-key',
+          'Authorization': 'Bearer test-key',
           'Content-Type': 'application/json',
         },
         json: true,
       });
+      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
     });
 
-    it('should handle getAllServices error', async () => {
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getAllServices')
-        .mockReturnValueOnce('')
-        .mockReturnValueOnce('')
-        .mockReturnValueOnce(0);
-
+    it('should handle getServices error', async () => {
+      mockExecuteFunctions.getNodeParameter.mockReturnValue('getServices');
       mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-
-      await expect(
-        executeAIServicesOperations.call(mockExecuteFunctions, [{ json: {} }]),
-      ).rejects.toThrow('API Error');
-    });
-  });
-
-  describe('getService', () => {
-    it('should get service details successfully', async () => {
-      const mockResponse = {
-        id: 'service1',
-        name: 'AI Service 1',
-        description: 'Test AI service',
-        methods: ['process', 'analyze'],
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getService')
-        .mockReturnValueOnce('service1');
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeAIServicesOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/services/service1',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('invokeService', () => {
-    it('should invoke service successfully', async () => {
-      const mockResponse = {
-        result: 'AI processing complete',
-        output_data: { processed: true },
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('invokeService')
-        .mockReturnValueOnce('service1')
-        .mockReturnValueOnce({ text: 'Hello World' })
-        .mockReturnValueOnce('process');
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeAIServicesOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://api.singularitynet.io/v1/services/service1/invoke',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        body: {
-          input_data: { text: 'Hello World' },
-          method_name: 'process',
-        },
-        json: true,
-        timeout: 300000,
-      });
-    });
-
-    it('should handle insufficient AGIX tokens error', async () => {
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('invokeService')
-        .mockReturnValueOnce('service1')
-        .mockReturnValueOnce({ text: 'Hello' })
-        .mockReturnValueOnce('');
-
-      const error = new Error('Payment required');
-      (error as any).httpCode = 402;
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(error);
-
-      await expect(
-        executeAIServicesOperations.call(mockExecuteFunctions, [{ json: {} }]),
-      ).rejects.toThrow();
-    });
-  });
-
-  describe('getServiceMethods', () => {
-    it('should get service methods successfully', async () => {
-      const mockResponse = {
-        methods: [
-          { name: 'process', parameters: ['text'] },
-          { name: 'analyze', parameters: ['data'] },
-        ],
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getServiceMethods')
-        .mockReturnValueOnce('service1');
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeAIServicesOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
-
-  describe('searchServices', () => {
-    it('should search services successfully', async () => {
-      const mockResponse = {
-        results: [
-          { id: 'service1', name: 'NLP Service', relevance: 0.95 },
-        ],
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('searchServices')
-        .mockReturnValueOnce('natural language processing')
-        .mockReturnValueOnce('nlp,ai')
-        .mockReturnValueOnce('0-50');
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeAIServicesOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/services/search?query=natural+language+processing&tags=nlp%2Cai&price_range=0-50',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-});
-
-describe('Organizations Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.singularitynet.io/v1',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('getAllOrganizations', () => {
-    it('should successfully get all organizations', async () => {
-      const mockResponse = {
-        data: [
-          { id: 'org1', name: 'Test Org 1', type: 'organization', status: 'active' },
-          { id: 'org2', name: 'Test Org 2', type: 'individual', status: 'active' }
-        ]
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
-        switch (param) {
-          case 'operation': return 'getAllOrganizations';
-          case 'type': return '';
-          case 'status': return 'active';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeOrganizationsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/organizations?status=active',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-        timeout: 30000,
-      });
-    });
-
-    it('should handle errors when getting all organizations', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
-        switch (param) {
-          case 'operation': return 'getAllOrganizations';
-          case 'type': return '';
-          case 'status': return '';
-          default: return '';
-        }
-      });
-
-      const error = new Error('API Error');
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(error);
-
-      await expect(
-        executeOrganizationsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('Failed to execute getAllOrganizations: API Error');
-    });
-  });
-
-  describe('getOrganization', () => {
-    it('should successfully get a specific organization', async () => {
-      const mockResponse = {
-        id: 'org1',
-        name: 'Test Organization',
-        description: 'Test Description',
-        type: 'organization',
-        status: 'active'
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
-        switch (param) {
-          case 'operation': return 'getOrganization';
-          case 'orgId': return 'org1';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeOrganizationsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/organizations/org1',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-        timeout: 30000,
-      });
-    });
-  });
-
-  describe('createOrganization', () => {
-    it('should successfully create a new organization', async () => {
-      const mockResponse = {
-        id: 'new-org',
-        name: 'New Organization',
-        description: 'New organization description',
-        type: 'organization',
-        status: 'active'
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
-        switch (param) {
-          case 'operation': return 'createOrganization';
-          case 'name': return 'New Organization';
-          case 'description': return 'New organization description';
-          case 'org_type': return 'organization';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeOrganizationsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://api.singularitynet.io/v1/organizations',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        body: {
-          name: 'New Organization',
-          description: 'New organization description',
-          org_type: 'organization',
-        },
-        json: true,
-        timeout: 300000,
-      });
-    });
-  });
-
-  describe('updateOrganization', () => {
-    it('should successfully update an organization', async () => {
-      const mockResponse = {
-        id: 'org1',
-        name: 'Updated Organization',
-        description: 'Updated description',
-        type: 'organization',
-        status: 'active'
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
-        switch (param) {
-          case 'operation': return 'updateOrganization';
-          case 'orgId': return 'org1';
-          case 'name': return 'Updated Organization';
-          case 'description': return 'Updated description';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeOrganizationsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'PUT',
-        url: 'https://api.singularitynet.io/v1/organizations/org1',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        body: {
-          name: 'Updated Organization',
-          description: 'Updated description',
-        },
-        json: true,
-        timeout: 300000,
-      });
-    });
-  });
-
-  describe('getOrganizationServices', () => {
-    it('should successfully get organization services', async () => {
-      const mockResponse = {
-        data: [
-          { id: 'service1', name: 'AI Service 1', organization_id: 'org1' },
-          { id: 'service2', name: 'AI Service 2', organization_id: 'org1' }
-        ]
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
-        switch (param) {
-          case 'operation': return 'getOrganizationServices';
-          case 'orgId': return 'org1';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeOrganizationsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/organizations/org1/services',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-        timeout: 30000,
-      });
-    });
-  });
-
-  describe('error handling', () => {
-    it('should continue on fail when continueOnFail is true', async () => {
       mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
-        switch (param) {
-          case 'operation': return 'getAllOrganizations';
-          default: return '';
-        }
-      });
 
-      const error = new Error('API Error');
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(error);
+      const result = await executeRegistryOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeOrganizationsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.error).toBe('API Error');
-      expect(result[0].json.operation).toBe('getAllOrganizations');
+      expect(result).toEqual([{ json: { error: 'API Error' }, pairedItem: { item: 0 } }]);
     });
   });
-});
 
-describe('Channels Resource', () => {
-  let mockExecuteFunctions: any;
+  describe('getOrganizations operation', () => {
+    it('should get organizations successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('getOrganizations')
+        .mockReturnValueOnce('MyOrg')
+        .mockReturnValueOnce('0x456');
 
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.singularitynet.io/v1',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
+      const mockResponse = { organizations: [{ id: 'org1', name: 'MyOrg' }] };
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-  describe('getAllChannels', () => {
-    it('should successfully get all channels', async () => {
-      const mockChannels = [
-        { id: 'channel1', recipient: '0x123', sender: '0x456', status: 'open', amount: 100 },
-        { id: 'channel2', recipient: '0x789', sender: '0xabc', status: 'closed', amount: 50 },
-      ];
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getAllChannels';
-          case 'recipient': return '';
-          case 'sender': return '';
-          case 'status': return '';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockChannels);
-
-      const result = await executeChannelsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockChannels);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/channels',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-        timeout: 300000,
-      });
-    });
-
-    it('should handle getAllChannels with filters', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getAllChannels';
-          case 'recipient': return '0x123';
-          case 'sender': return '0x456';
-          case 'status': return 'open';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue([]);
-
-      await executeChannelsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+      const result = await executeRegistryOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
       expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
         method: 'GET',
-        url: 'https://api.singularitynet.io/v1/channels?recipient=0x123&sender=0x456&status=open',
+        url: 'https://api.singularitynet.io/v1/registry/organizations?name=MyOrg&owner=0x456',
         headers: {
-          'Authorization': 'Bearer test-api-key',
+          'Authorization': 'Bearer test-key',
           'Content-Type': 'application/json',
         },
         json: true,
-        timeout: 300000,
       });
+      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
     });
   });
 
-  describe('getChannel', () => {
-    it('should successfully get a specific channel', async () => {
-      const mockChannel = { id: 'channel1', recipient: '0x123', sender: '0x456', status: 'open', amount: 100 };
+  describe('registerService operation', () => {
+    it('should register service successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('registerService')
+        .mockReturnValueOnce('org123')
+        .mockReturnValueOnce('service456')
+        .mockReturnValueOnce('https://metadata.example.com');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getChannel';
-          case 'channelId': return 'channel1';
-          default: return '';
-        }
-      });
+      const mockResponse = { success: true, transactionHash: '0xabc' };
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockChannel);
+      const result = await executeRegistryOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeChannelsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockChannel);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/channels/channel1',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-        timeout: 300000,
-      });
-    });
-  });
-
-  describe('createChannel', () => {
-    it('should successfully create a new channel', async () => {
-      const mockCreatedChannel = { id: 'new-channel', recipient: '0x123', amount: 100, expiration: 1640995200 };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'createChannel';
-          case 'recipient': return '0x123';
-          case 'amount': return 100;
-          case 'expiration': return 1640995200;
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockCreatedChannel);
-
-      const result = await executeChannelsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockCreatedChannel);
       expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
         method: 'POST',
-        url: 'https://api.singularitynet.io/v1/channels',
+        url: 'https://api.singularitynet.io/v1/registry/services',
         headers: {
-          'Authorization': 'Bearer test-api-key',
+          'Authorization': 'Bearer test-key',
           'Content-Type': 'application/json',
         },
         body: {
-          recipient: '0x123',
-          amount: 100,
-          expiration: 1640995200,
+          orgId: 'org123',
+          serviceId: 'service456',
+          metadataURI: 'https://metadata.example.com',
         },
         json: true,
-        timeout: 300000,
       });
+      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
     });
   });
 
-  describe('updateChannel', () => {
-    it('should successfully update a channel', async () => {
-      const mockUpdatedChannel = { id: 'channel1', amount: 150, updated: true };
+  describe('updateService operation', () => {
+    it('should update service successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('updateService')
+        .mockReturnValueOnce('service456')
+        .mockReturnValueOnce('https://updated-metadata.example.com');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'updateChannel';
-          case 'channelId': return 'channel1';
-          case 'amount': return 150;
-          default: return '';
-        }
-      });
+      const mockResponse = { success: true, transactionHash: '0xdef' };
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockUpdatedChannel);
+      const result = await executeRegistryOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeChannelsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockUpdatedChannel);
       expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
         method: 'PUT',
-        url: 'https://api.singularitynet.io/v1/channels/channel1',
+        url: 'https://api.singularitynet.io/v1/registry/services/service456',
         headers: {
-          'Authorization': 'Bearer test-api-key',
+          'Authorization': 'Bearer test-key',
           'Content-Type': 'application/json',
         },
         body: {
-          amount: 150,
+          metadataURI: 'https://updated-metadata.example.com',
         },
         json: true,
-        timeout: 300000,
       });
+      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
     });
   });
 
-  describe('closeChannel', () => {
-    it('should successfully close a channel', async () => {
-      const mockClosedChannel = { id: 'channel1', status: 'closed', success: true };
+  describe('unregisterService operation', () => {
+    it('should unregister service successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('unregisterService')
+        .mockReturnValueOnce('service456');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'closeChannel';
-          case 'channelId': return 'channel1';
-          default: return '';
-        }
-      });
+      const mockResponse = { success: true, transactionHash: '0xghi' };
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockClosedChannel);
+      const result = await executeRegistryOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeChannelsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockClosedChannel);
       expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
         method: 'DELETE',
-        url: 'https://api.singularitynet.io/v1/channels/channel1',
+        url: 'https://api.singularitynet.io/v1/registry/services/service456',
         headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-        timeout: 300000,
-      });
-    });
-  });
-
-  describe('error handling', () => {
-    it('should handle API errors', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getChannel';
-          case 'channelId': return 'invalid-channel';
-          default: return '';
-        }
-      });
-
-      const apiError = new Error('Channel not found');
-      (apiError as any).httpCode = 404;
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(apiError);
-
-      await expect(
-        executeChannelsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow();
-    });
-
-    it('should continue on fail when configured', async () => {
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getChannel';
-          case 'channelId': return 'invalid-channel';
-          default: return '';
-        }
-      });
-
-      const apiError = new Error('Channel not found');
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(apiError);
-
-      const result = await executeChannelsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual({ error: 'Channel not found' });
-    });
-  });
-});
-
-describe('Transactions Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.singularitynet.io/v1',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('getAllTransactions', () => {
-    it('should get all transactions successfully', async () => {
-      const mockTransactions = {
-        transactions: [
-          { hash: '0x123', amount: '100', type: 'transfer' },
-          { hash: '0x456', amount: '50', type: 'approval' },
-        ],
-        total: 2,
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getAllTransactions')
-        .mockReturnValueOnce('0x1234567890abcdef')
-        .mockReturnValueOnce('transfer')
-        .mockReturnValueOnce('2024-01-01')
-        .mockReturnValueOnce('2024-01-31');
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockTransactions);
-
-      const result = await executeTransactionsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }],
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockTransactions);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/transactions?address=0x1234567890abcdef&type=transfer&date_from=2024-01-01&date_to=2024-01-31',
-        headers: {
-          Authorization: 'Bearer test-api-key',
+          'Authorization': 'Bearer test-key',
           'Content-Type': 'application/json',
         },
         json: true,
       });
-    });
-
-    it('should handle getAllTransactions error', async () => {
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getAllTransactions')
-        .mockReturnValueOnce('invalid-address');
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue({
-        httpCode: 400,
-        message: 'Invalid address format',
-      });
-
-      await expect(
-        executeTransactionsOperations.call(mockExecuteFunctions, [{ json: {} }]),
-      ).rejects.toThrow();
-    });
-  });
-
-  describe('getTransaction', () => {
-    it('should get transaction details successfully', async () => {
-      const mockTransaction = {
-        hash: '0x123abc',
-        amount: '100',
-        from: '0x1111',
-        to: '0x2222',
-        status: 'confirmed',
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getTransaction')
-        .mockReturnValueOnce('0x123abc');
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockTransaction);
-
-      const result = await executeTransactionsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }],
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockTransaction);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/transactions/0x123abc',
-        headers: {
-          Authorization: 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('createTransfer', () => {
-    it('should create transfer successfully', async () => {
-      const mockTransferResponse = {
-        transaction_hash: '0x789def',
-        status: 'pending',
-        gas_fee: '0.001',
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('createTransfer')
-        .mockReturnValueOnce('0x9999999999999999')
-        .mockReturnValueOnce('100.5');
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockTransferResponse);
-
-      const result = await executeTransactionsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }],
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockTransferResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://api.singularitynet.io/v1/transactions/transfer',
-        headers: {
-          Authorization: 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        body: {
-          to_address: '0x9999999999999999',
-          amount: '100.5',
-        },
-        json: true,
-        timeout: 300000,
-      });
-    });
-  });
-
-  describe('getBalance', () => {
-    it('should get balance successfully', async () => {
-      const mockBalance = {
-        address: '0x1234567890abcdef',
-        agix_balance: '1500.75',
-        eth_balance: '0.5',
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getBalance')
-        .mockReturnValueOnce('0x1234567890abcdef');
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockBalance);
-
-      const result = await executeTransactionsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }],
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockBalance);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/transactions/balance?address=0x1234567890abcdef',
-        headers: {
-          Authorization: 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('approveSpending', () => {
-    it('should approve spending successfully', async () => {
-      const mockApprovalResponse = {
-        transaction_hash: '0xapprove123',
-        spender: '0x8888888888888888',
-        amount: '500',
-        status: 'pending',
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('approveSpending')
-        .mockReturnValueOnce('500')
-        .mockReturnValueOnce('0x8888888888888888');
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockApprovalResponse);
-
-      const result = await executeTransactionsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }],
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockApprovalResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://api.singularitynet.io/v1/transactions/approve',
-        headers: {
-          Authorization: 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        body: {
-          spender: '0x8888888888888888',
-          amount: '500',
-        },
-        json: true,
-        timeout: 300000,
-      });
-    });
-  });
-});
-
-describe('Marketplace Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://api.singularitynet.io/v1',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('getFeaturedServices', () => {
-    it('should get featured services successfully', async () => {
-      const mockResponse = {
-        services: [
-          {
-            id: 'service1',
-            name: 'AI Vision Service',
-            description: 'Computer vision AI service',
-            rating: 4.5,
-            featured: true,
-          },
-        ],
-        total: 1,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getFeaturedServices';
-        if (param === 'limit') return 10;
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeMarketplaceOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/marketplace/featured',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        qs: { limit: 10 },
-        json: true,
-        timeout: 30000,
-      });
-
-      expect(result).toEqual([
-        {
-          json: mockResponse,
-          pairedItem: { item: 0 },
-        },
-      ]);
-    });
-
-    it('should handle errors for getFeaturedServices', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getFeaturedServices';
-        if (param === 'limit') return 10;
-        return undefined;
-      });
-
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-
-      const result = await executeMarketplaceOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result[0].json.error).toBe('API Error');
-    });
-  });
-
-  describe('getCategories', () => {
-    it('should get categories successfully', async () => {
-      const mockResponse = {
-        categories: [
-          { id: '1', name: 'Computer Vision', serviceCount: 25 },
-          { id: '2', name: 'Natural Language Processing', serviceCount: 18 },
-        ],
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getCategories';
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeMarketplaceOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/marketplace/categories',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-        timeout: 30000,
-      });
-
-      expect(result).toEqual([
-        {
-          json: mockResponse,
-          pairedItem: { item: 0 },
-        },
-      ]);
-    });
-  });
-
-  describe('createReview', () => {
-    it('should create review successfully', async () => {
-      const mockResponse = {
-        id: 'review123',
-        serviceId: 'service456',
-        rating: 5,
-        comment: 'Excellent service!',
-        createdAt: '2023-12-01T10:00:00Z',
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'createReview';
-        if (param === 'serviceId') return 'service456';
-        if (param === 'rating') return 5;
-        if (param === 'comment') return 'Excellent service!';
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeMarketplaceOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://api.singularitynet.io/v1/marketplace/reviews',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        body: {
-          serviceId: 'service456',
-          rating: 5,
-          comment: 'Excellent service!',
-        },
-        json: true,
-        timeout: 60000,
-      });
-
-      expect(result).toEqual([
-        {
-          json: mockResponse,
-          pairedItem: { item: 0 },
-        },
-      ]);
-    });
-
-    it('should throw error for invalid rating', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'createReview';
-        if (param === 'serviceId') return 'service456';
-        if (param === 'rating') return 6;
-        if (param === 'comment') return 'Test comment';
-        return undefined;
-      });
-
-      await expect(
-        executeMarketplaceOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('Rating must be between 1 and 5');
-    });
-  });
-
-  describe('getServiceReviews', () => {
-    it('should get service reviews successfully', async () => {
-      const mockResponse = {
-        reviews: [
-          {
-            id: 'review1',
-            rating: 5,
-            comment: 'Great service!',
-            createdAt: '2023-12-01T10:00:00Z',
-          },
-        ],
-        total: 1,
-        averageRating: 4.5,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getServiceReviews';
-        if (param === 'serviceId') return 'service123';
-        if (param === 'limit') return 20;
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeMarketplaceOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/marketplace/reviews/service123',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        qs: { limit: 20 },
-        json: true,
-        timeout: 30000,
-      });
-
-      expect(result).toEqual([
-        {
-          json: mockResponse,
-          pairedItem: { item: 0 },
-        },
-      ]);
-    });
-  });
-
-  describe('getMarketplaceStats', () => {
-    it('should get marketplace stats successfully', async () => {
-      const mockResponse = {
-        totalServices: 150,
-        totalReviews: 500,
-        averageRating: 4.2,
-        period: '30d',
-        topCategories: [
-          { name: 'Computer Vision', count: 45 },
-          { name: 'NLP', count: 30 },
-        ],
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getMarketplaceStats';
-        if (param === 'period') return '30d';
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeMarketplaceOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://api.singularitynet.io/v1/marketplace/stats',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        qs: { period: '30d' },
-        json: true,
-        timeout: 30000,
-      });
-
-      expect(result).toEqual([
-        {
-          json: mockResponse,
-          pairedItem: { item: 0 },
-        },
-      ]);
+      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
     });
   });
 });
